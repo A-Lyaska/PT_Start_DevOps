@@ -17,5 +17,3 @@ CREATE TABLE IF NOT EXISTS PhoneNums (
     PhoneNum VARCHAR (100) NOT NULL
 );
 
-INSERT INTO emails (email) VALUES ('test@mail.ru');
-INSERT INTO phones (phone) VALUES ('8 987 65 43 21');
