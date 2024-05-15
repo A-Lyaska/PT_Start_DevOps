@@ -1,72 +1,79 @@
-version: '3.9'
+version: '3.8'
 
 services:
-  bot:
-    build:
-      context: ./bot
-    container_name: tg_bot
-    env_file:
-      - .env
-    depends_on:
-      - db
-    ports:
-      - "8000:8000"
-    environment:
-      - DATABASE_HOST=db
-      - DATABASE_PORT=5432
-      - DATABASE_NAME=pt_db
-      - DATABASE_USER=postgres
-      - DATABASE_PASSWORD=Qq12345
-
   db:
-    build:
-      context: ./db
+    image: postgres:latest
     container_name: postgres_db
     environment:
-      - POSTGRES_DB=pt_db
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=Qq12345
+      POSTGRES_DB: pt_db
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
     volumes:
       - db_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
-    command: |
-      postgres
-      -c wal_level=replica
-      -c hot_standby=on
-      -c max_wal_senders=10
-      -c max_replication_slots=10
-      -c hot_standby_feedback=on
-      -c log_replication_commands=on
+    networks:
+      - db_net
+    restart: always
 
   db_repl:
-    build:
-      context: ./db_repl
+    image: postgres:latest
     container_name: postgres_db_repl
     environment:
-      - POSTGRES_DB=pt_db
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=Qq12345
-      - REPLICATION_USER=repl
-      - REPLICATION_PASSWORD=repl_pass
+      POSTGRES_DB: pt_db
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      REPLICATION_ROLE: 'replica'
+      REPLICATION_PRIMARY_HOST: postgres_db
+      REPLICATION_PRIMARY_PORT: '5432'
+      REPLICATION_USER: 'root'
+      REPLICATION_PASSWORD: 'root'
     volumes:
       - db_repl_data:/var/lib/postgresql/data
     ports:
       - "5433:5432"
-    command: |
-      bash -c "
-      rm -rf /var/lib/postgresql/data/*
-      until PGPASSWORD=${REPLICATION_PASSWORD} pg_basebackup --pgdata=/var/lib/postgresql/data -R --slot=replication_slot --host=postgres_db --username=${REPLICATION_USER}
-      do
-      echo 'Waiting for primary to connect...'
-      sleep 1s
-      done
-      echo 'Backup done, starting replica...'
-      chown -R postgres:postgres /var/lib/postgresql/data
-      chmod 700 /var/lib/postgresql/data
-      su - postgres -c '/usr/lib/postgresql/16/bin/postgres -D /var/lib/postgresql/data'
-      "
+    networks:
+      - db_net
+    restart: always
+    depends_on:
+      - db
+
+  bot:
+    image: pt_start_devops-bot
+    container_name: tg_bot
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      DB_HOST: postgres_db
+      DB_PORT: 5432
+      DB_USER: root
+      DB_PASSWORD: root
+      DB_NAME: pt_db
+    ports:
+      - "8000:8000"
+    networks:
+      - db_net
+    restart: always
+    depends_on:
+      - db
+
+  registry:
+    image: registry:2
+    container_name: registry
+    ports:
+      - "5000:5000"
+    volumes:
+      - registry_data:/var/lib/registry
+    networks:
+      - db_net
+    restart: always
+
+networks:
+  db_net:
+    driver: bridge
 
 volumes:
   db_data:
   db_repl_data:
+  registry_data:
