@@ -1,7 +1,3 @@
 FROM postgres:15
 
-ENV POSTGRES_DB pt_db
-ENV POSTGRES_USER postgres
-ENV POSTGRES_PASSWORD Qq12345
-
 COPY init.sql /docker-entrypoint-initdb.d/

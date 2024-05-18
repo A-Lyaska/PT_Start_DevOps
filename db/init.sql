@@ -1,8 +1,12 @@
-CREATE USER replicator WITH REPLICATION ENCRYPTED PASSWORD 'Qq123456';
-SELECT pg_create_physical_replication_slot('replication_slot');
+create user ${DB_REPL_USER} with replication encrypted password ${DB_REPL_PASSWORD};
+select pg_create_physical_replication_slot('replication_slot');
 
-SELECT 'CREATE DATABASE devops'
-WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'devops')\gexec
+DO $$ 
+BEGIN
+  IF NOT EXISTS (SELECT FROM pg_database WHERE datname = 'devops') THEN
+    CREATE DATABASE pt_db;
+  END IF;
+END $$;
 
 CREATE TABLE IF NOT EXISTS emails (
     id SERIAL PRIMARY KEY,

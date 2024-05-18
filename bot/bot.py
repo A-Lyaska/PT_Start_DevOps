@@ -9,26 +9,21 @@ from telegram import Update, ForceReply
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, ConversationHandler
 from telegram.error import BadRequest
 
-# Load environment variables from .env file
 load_dotenv()
 
-# Telegram bot token
 TOKEN = os.getenv("TOKEN")
 
-# Remote machine details
 RM_HOST = os.getenv("RM_HOST")
 RM_PORT = int(os.getenv("RM_PORT"))
 RM_USER = os.getenv("RM_USER")
 RM_PASSWORD = os.getenv("RM_PASSWORD")
 
-# Database details
 DB_USER = os.getenv("DB_USER")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
 DB_HOST = os.getenv("DB_HOST")
 DB_DATABASE = os.getenv("DB_DATABASE")
 DB_PORT = int(os.getenv("DB_PORT"))
 
-# Replication database details
 DB_REPL_USER = os.getenv("DB_REPL_USER")
 DB_REPL_PASSWORD = os.getenv("DB_REPL_PASSWORD")
 DB_REPL_HOST = os.getenv("DB_REPL_HOST")
