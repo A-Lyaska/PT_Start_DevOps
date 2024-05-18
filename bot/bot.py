@@ -1,17 +1,38 @@
+import os
+from dotenv import load_dotenv
 import logging
 import re
 import paramiko
-
+import psycopg2
+from psycopg2 import Error
 from telegram import Update, ForceReply
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, ConversationHandler
 from telegram.error import BadRequest
 
-import psycopg2
-from psycopg2 import Error
+# Load environment variables from .env file
+load_dotenv()
 
+# Telegram bot token
+TOKEN = os.getenv("TOKEN")
 
-TOKEN = "6410163575:AAHyB8UhFfuiRsA3ftHbjYRFdNdSPFjcJQc"
+# Remote machine details
+RM_HOST = os.getenv("RM_HOST")
+RM_PORT = int(os.getenv("RM_PORT"))
+RM_USER = os.getenv("RM_USER")
+RM_PASSWORD = os.getenv("RM_PASSWORD")
 
+# Database details
+DB_USER = os.getenv("DB_USER")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
+DB_HOST = os.getenv("DB_HOST")
+DB_DATABASE = os.getenv("DB_DATABASE")
+DB_PORT = int(os.getenv("DB_PORT"))
+
+# Replication database details
+DB_REPL_USER = os.getenv("DB_REPL_USER")
+DB_REPL_PASSWORD = os.getenv("DB_REPL_PASSWORD")
+DB_REPL_HOST = os.getenv("DB_REPL_HOST")
+DB_REPL_PORT = int(os.getenv("DB_REPL_PORT"))
 
 # Подключаем логирование
 logging.basicConfig(
@@ -76,11 +97,11 @@ def confirmSaveEmails(update: Update, context):
 def save_emails_to_db(email_list):
     connection = None
     try:
-        connection = psycopg2.connect(user="postgres",
-                                    password="Qq12345",
-                                    host="192.168.19.165",
-                                    port="5432", 
-                                    database="pt_db")
+        connection = psycopg2.connect(user=DB_USER,
+                                    password=DB_PASSWORD,
+                                    host=DB_HOST,
+                                    port=DB_PORT, 
+                                    database=DB_DATABASE)
         cursor = connection.cursor()
         for email in email_list:
             cursor.execute("INSERT INTO emails(email) VALUES (%s);", (email,))
@@ -140,11 +161,11 @@ def confirmSavePhones(update: Update, context):
 def save_phones_to_db(phone_list):
     connection = None
     try:
-        connection = psycopg2.connect(user="postgres",
-                                    password="Qq12345",
-                                    host="192.168.19.165",
-                                    port="5432", 
-                                    database="pt_db")
+        connection = psycopg2.connect(user=DB_USER,
+                                    password=DB_PASSWORD,
+                                    host=DB_HOST,
+                                    port=DB_PORT, 
+                                    database=DB_DATABASE)
         cursor = connection.cursor()
         for phone in phone_list:
             cursor.execute("INSERT INTO phones(phone) VALUES (%s);", (phone,))
@@ -168,13 +189,12 @@ def verifyPassword(update: Update, context):
 
 
 def checkPasswordComplexity(password: str) -> bool:
-    # Регулярное выражение для проверки сложности пароля
     passwordRegex = re.compile(r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*()])[A-Za-z\d!@#$%^&*()]{8,}$')
     return bool(passwordRegex.match(password))
 
 
 def handlePasswordVerification(update: Update, context):
-    user_password = update.message.text  # Получаем введенный пользователем пароль
+    user_password = update.message.text
 
     if checkPasswordComplexity(user_password):
         update.message.reply_text('Пароль сложный')
@@ -183,125 +203,77 @@ def handlePasswordVerification(update: Update, context):
 
     return ConversationHandler.END
 
-def execute_ssh_command(hostname, username, password, command):
+def execute_ssh_command(hostname, port, username, password, command):
     client = paramiko.SSHClient()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    client.connect(hostname=hostname, username=username, password=password)
+    client.connect(hostname=hostname, port=port, username=username, password=password)
     stdin, stdout, stderr = client.exec_command(command)
     output = stdout.read().decode()
     client.close()
     return output
 
 def get_release(update: Update, context):
-    hostname = "192.168.19.164"
-    username = "a_lyaska"
-    password = "Nik2104"
     command = "cat /etc/*release"
-
-    result = execute_ssh_command(hostname, username, password, command)
+    result = execute_ssh_command(RM_HOST, RM_PORT, RM_USER, RM_PASSWORD, command)
     update.message.reply_text(result)
 
 def get_uname(update: Update, context):
-    hostname = "192.168.19.164"
-    username = "a_lyaska"
-    password = "Nik2104"
     command = "uname -a"
-
-    result = execute_ssh_command(hostname, username, password, command)
+    result = execute_ssh_command(RM_HOST, RM_PORT, RM_USER, RM_PASSWORD, command)
     update.message.reply_text(result)
 
 def get_uptime(update: Update, context):
-    hostname = "192.168.19.164"
-    username = "a_lyaska"
-    password = "Nik2104"
     command = "uptime"
-
-    result = execute_ssh_command(hostname, username, password, command)
+    result = execute_ssh_command(RM_HOST, RM_PORT, RM_USER, RM_PASSWORD, command)
     update.message.reply_text(result)
 
 def get_df(update: Update, context):
-    hostname = "192.168.19.164"
-    username = "a_lyaska"
-    password = "Nik2104"
     command = "df -h"
-
-    result = execute_ssh_command(hostname, username, password, command)
+    result = execute_ssh_command(RM_HOST, RM_PORT, RM_USER, RM_PASSWORD, command)
     update.message.reply_text(result)
 
 def get_free(update: Update, context):
-    hostname = "192.168.19.164"
-    username = "a_lyaska"
-    password = "Nik2104"
     command = "free -h"
-
-    result = execute_ssh_command(hostname, username, password, command)
+    result = execute_ssh_command(RM_HOST, RM_PORT, RM_USER, RM_PASSWORD, command)
     update.message.reply_text(result)
 
 def get_mpstat(update: Update, context):
-    hostname = "192.168.19.164"
-    username = "a_lyaska"
-    password = "Nik2104"
     command = "mpstat"
-
-    result = execute_ssh_command(hostname, username, password, command)
+    result = execute_ssh_command(RM_HOST, RM_PORT, RM_USER, RM_PASSWORD, command)
     update.message.reply_text(result)
 
 def get_w(update: Update, context):
-    hostname = "192.168.19.164"
-    username = "a_lyaska"
-    password = "Nik2104"
     command = "w"
-
-    result = execute_ssh_command(hostname, username, password, command)
+    result = execute_ssh_command(RM_HOST, RM_PORT, RM_USER, RM_PASSWORD, command)
     update.message.reply_text(result)
 
 def get_auths(update: Update, context):
-    hostname = "192.168.19.164"
-    username = "a_lyaska"
-    password = "Nik2104"
     command = "last -n 10"
-
-    result = execute_ssh_command(hostname, username, password, command)
+    result = execute_ssh_command(RM_HOST, RM_PORT, RM_USER, RM_PASSWORD, command)
     update.message.reply_text(result)
 
 def get_critical(update: Update, context):
-    hostname = "192.168.19.164"
-    username = "a_lyaska"
-    password = "Nik2104"
     command = "journalctl -p crit -n 5"
-
-    result = execute_ssh_command(hostname, username, password, command)
+    result = execute_ssh_command(RM_HOST, RM_PORT, RM_USER, RM_PASSWORD, command)
     update.message.reply_text(result)
 
 def get_ps(update: Update, context):
-    hostname = "192.168.19.164"
-    username = "a_lyaska"
-    password = "Nik2104"
     command = "ps aux | head"
-
-    result = execute_ssh_command(hostname, username, password, command)
+    result = execute_ssh_command(RM_HOST, RM_PORT, RM_USER, RM_PASSWORD, command)
     update.message.reply_text(result)
 
 def get_ss(update: Update, context):
-    hostname = "192.168.19.164"
-    username = "a_lyaska"
-    password = "Nik2104"
     command = "ss -tunlp"
-
-    result = execute_ssh_command(hostname, username, password, command)
+    result = execute_ssh_command(RM_HOST, RM_PORT, RM_USER, RM_PASSWORD, command)
     update.message.reply_text(result)
 
 def get_apt_list(update: Update, context):
-    hostname = "192.168.19.164"
-    username = "a_lyaska"
-    password = "Nik2104"
     package_name = ' '.join(context.args)
     if package_name:
         command = f"dpkg -l {package_name}"
     else:
         command = "dpkg -l"
-
-    result = execute_ssh_command(hostname, username, password, command)
+    result = execute_ssh_command(RM_HOST, RM_PORT, RM_USER, RM_PASSWORD, command)
     
     max_message_length = 4096
     if len(result) > max_message_length:
@@ -315,38 +287,28 @@ def get_apt_list(update: Update, context):
         update.message.reply_text(result)
     
 def get_services(update: Update, context):
-    hostname = "192.168.19.164"
-    username = "a_lyaska"
-    password = "Nik2104"
     command = "systemctl list-units --type=service | head -n 5"
-
-    result = execute_ssh_command(hostname, username, password, command)
+    result = execute_ssh_command(RM_HOST, RM_PORT, RM_USER, RM_PASSWORD, command)
     update.message.reply_text(result)
     
 def get_repl_logs(update: Update, context):
-    hostname = "192.168.19.165"
-    username = "a_lyaska"
-    password = "Nik2104"
     command = "cat /var/log/postgresql/postgresql-15-main.log | head -n 5"
-
-    result = execute_ssh_command(hostname, username, password, command)
+    result = execute_ssh_command(RM_HOST, RM_PORT, RM_USER, RM_PASSWORD, command)
     update.message.reply_text(result)    
 
 def get_emails(update: Update, context):
     connection = None
     try:
-        connection = psycopg2.connect(user="postgres",
-                                    password="Qq12345",
-                                    host="192.168.19.165",
-                                    port="5432", 
-                                    database="pt_db")
+        connection = psycopg2.connect(user=DB_USER,
+                                    password=DB_PASSWORD,
+                                    host=DB_HOST,
+                                    port=DB_PORT, 
+                                    database=DB_DATABASE)
 
         cursor = connection.cursor()
         cursor.execute("SELECT * FROM emails;")
         data = cursor.fetchall()
-        answer = []
-        for row in data:
-            answer.append(row)
+        answer = '\n'.join(str(row) for row in data)  # Преобразуем в строку каждую строку результата запроса
         update.message.reply_text(answer)  
         logging.info("Команда успешно выполнена")
     except (Exception, Error) as error:
@@ -355,23 +317,20 @@ def get_emails(update: Update, context):
         if connection is not None:
             cursor.close()
             connection.close()
-            
         
 def get_phone_numbers(update: Update, context):
     connection = None
     try:
-        connection = psycopg2.connect(user="postgres",
-                                    password="Qq12345",
-                                    host="192.168.19.165",
-                                    port="5432", 
-                                    database="pt_db")
+        connection = psycopg2.connect(user=DB_USER,
+                                    password=DB_PASSWORD,
+                                    host=DB_HOST,
+                                    port=DB_PORT, 
+                                    database=DB_DATABASE)
 
         cursor = connection.cursor()
         cursor.execute("SELECT * FROM phones;")
         data = cursor.fetchall()
-        answer = []
-        for row in data:
-            answer.append(row)
+        answer = '\n'.join(str(row) for row in data)  # Преобразуем в строку каждую строку результата запроса
         update.message.reply_text(answer)  
         logging.info("Команда успешно выполнена")
     except (Exception, Error) as error:
