@@ -22,12 +22,12 @@ DB_USER = os.getenv("DB_USER")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
 DB_HOST = os.getenv("DB_HOST")
 DB_DATABASE = os.getenv("DB_DATABASE")
-DB_PORT = int(os.getenv("DB_PORT"))
+DB_PORT = os.getenv("DB_PORT")
 
 DB_REPL_USER = os.getenv("DB_REPL_USER")
 DB_REPL_PASSWORD = os.getenv("DB_REPL_PASSWORD")
 DB_REPL_HOST = os.getenv("DB_REPL_HOST")
-DB_REPL_PORT = int(os.getenv("DB_REPL_PORT"))
+DB_REPL_PORT = os.getenv("DB_REPL_PORT")
 
 # Подключаем логирование
 logging.basicConfig(
