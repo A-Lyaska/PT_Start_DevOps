@@ -203,8 +203,9 @@ def execute_ssh_command(hostname, port, username, password, command):
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     client.connect(hostname=hostname, port=port, username=username, password=password)
     stdin, stdout, stderr = client.exec_command(command)
-    output = stdout.read().decode()
+    output = stdout.read() + stderr.read()
     client.close()
+    output = str(output.decode('utf-8')).replace('\\n', '\n').replace('\\t', '\t')[:-1]
     return output
 
 def get_release(update: Update, context):
@@ -287,8 +288,8 @@ def get_services(update: Update, context):
     update.message.reply_text(result)
     
 def get_repl_logs(update: Update, context):
-    command = "docker logs db_repl_image --tail 10"
-    result = execute_ssh_command(DB_REPL_HOST, DB_REPL_PORT, RM_USER, RM_PASSWORD, command)
+    command = "docker logs db_repl_image | grep replication"
+    result = execute_ssh_command(RM_HOST, RM_PORT, RM_USER, RM_PASSWORD, command)
     update.message.reply_text(result)    
 
 def get_emails(update: Update, context):
