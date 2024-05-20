@@ -288,7 +288,7 @@ def get_services(update: Update, context):
     
 def get_repl_logs(update: Update, context):
     command = "sudo docker logs db_repl_image --tail 10"
-    result = execute_ssh_command(RM_HOST, RM_PORT, RM_USER, RM_PASSWORD, command)
+    result = execute_ssh_command(RM_HOST, RM_PORT, DB_USER, DB_PASSWORD, command)
     update.message.reply_text(result)    
 
 def get_emails(update: Update, context):
