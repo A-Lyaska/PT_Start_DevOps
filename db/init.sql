@@ -1,20 +1,15 @@
-create user ${DB_REPL_USER} with replication encrypted password ${DB_REPL_PASSWORD};
-select pg_create_physical_replication_slot('replication_slot');
+CREATE USER ${DB_REPL_USER} REPLICATION LOGIN PASSWORD '${DB_REPL_PASSWORD}';
 
-DO $$ 
-BEGIN
-  IF NOT EXISTS (SELECT FROM pg_database WHERE datname = 'devops') THEN
-    CREATE DATABASE pt_db;
-  END IF;
-END $$;
+CREATE DATABASE ${DB_DATABASE};
+
+\c ${DB_DATABASE};
 
 CREATE TABLE IF NOT EXISTS emails (
     id SERIAL PRIMARY KEY,
-    email VARCHAR (100) NOT NULL
+    email VARCHAR(255) NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS phones (
     id SERIAL PRIMARY KEY,
-    phone VARCHAR (100) NOT NULL
+    phone VARCHAR(20) NOT NULL
 );
-
